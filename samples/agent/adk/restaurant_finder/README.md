@@ -28,6 +28,23 @@ This sample uses the Agent Development Kit (ADK) along with the A2A protocol to 
     uv run .
     ```
 
+## Authentication
+
+This agent is configured to verify Firebase Auth ID tokens.
+
+1.  **Firebase Project:** Ensure you have a Firebase project created.
+2.  **Service Account:**
+    *   Go to **Project Settings** > **Service accounts**.
+    *   Generate a new private key and save the JSON file.
+3.  **Environment Variable:**
+    *   Set `GOOGLE_APPLICATION_CREDENTIALS` to the path of your service account JSON file.
+    *   Or, ensure your environment is authenticated via `gcloud auth application-default login`.
+
+    ```bash
+    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
+    uv run .
+    ```
+
 
 ## Disclaimer
 

@@ -46,6 +46,8 @@ import { AppConfig } from "./configs/types.js";
 import { config as restaurantConfig } from "./configs/restaurant.js";
 import { config as contactsConfig } from "./configs/contacts.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { AuthService } from "./auth/auth.js";
+import { User } from "firebase/auth";
 
 const configs: Record<string, AppConfig> = {
   restaurant: restaurantConfig,
@@ -56,6 +58,11 @@ const configs: Record<string, AppConfig> = {
 export class A2UILayoutEditor extends SignalWatcher(LitElement) {
   @provide({ context: UI.Context.themeContext })
   accessor theme: v0_8.Types.Theme = uiTheme;
+
+  @state()
+  accessor #user: User | null = null;
+
+  #authService: AuthService | undefined;
 
   @state()
   accessor #requesting = false;
@@ -299,11 +306,28 @@ export class A2UILayoutEditor extends SignalWatcher(LitElement) {
       this.config.background
     );
 
+    // Initialize Auth
+    if (this.config.firebaseConfig) {
+      this.#authService = new AuthService(this.config.firebaseConfig);
+      this.#authService.onAuthStateChanged((user) => {
+        this.#user = user;
+      });
+    }
+
     // Initialize client with configured URL
-    this.#a2uiClient = new A2UIClient(this.config.serverUrl);
+    this.#a2uiClient = new A2UIClient(
+      this.config.serverUrl,
+      async () => {
+        return this.#authService ? await this.#authService.getToken() : null;
+      }
+    );
   }
 
   render() {
+    if (this.#authService && this.#authService.isConfigured && !this.#user) {
+      return this.#renderSignIn();
+    }
+
     return [
       this.#renderThemeToggle(),
       this.#maybeRenderForm(),
@@ -312,21 +336,68 @@ export class A2UILayoutEditor extends SignalWatcher(LitElement) {
     ];
   }
 
+  #renderSignIn() {
+    return html`
+      <div class="pending">
+        <h1>Sign In Required</h1>
+        <button
+          @click=${() => this.#authService?.signIn()}
+          style="
+            background: var(--p-40);
+            color: var(--n-100);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 32px;
+            font-size: 16px;
+            cursor: pointer;
+          "
+        >
+          Sign In with Google
+        </button>
+      </div>
+    `;
+  }
+
   #renderThemeToggle() {
-    return html` <div>
+    return html` <div
+      style="
+        position: fixed;
+        top: var(--bb-grid-size-3);
+        right: var(--bb-grid-size-4);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      "
+    >
+      ${this.#user
+        ? html`<button
+            @click=${() => this.#authService?.signOut()}
+            style="
+              background: transparent;
+              border: 1px solid var(--p-40);
+              color: var(--p-40);
+              padding: 8px 16px;
+              border-radius: 20px;
+              cursor: pointer;
+            "
+          >
+            Sign Out
+          </button>`
+        : nothing}
       <button
         @click=${(evt: Event) => {
-        if (!(evt.target instanceof HTMLButtonElement)) return;
-        const { colorScheme } = window.getComputedStyle(evt.target);
-        if (colorScheme === "dark") {
-          document.body.classList.add("light");
-          document.body.classList.remove("dark");
-        } else {
-          document.body.classList.add("dark");
-          document.body.classList.remove("light");
-        }
-      }}
+          if (!(evt.target instanceof HTMLButtonElement)) return;
+          const { colorScheme } = window.getComputedStyle(evt.target);
+          if (colorScheme === "dark") {
+            document.body.classList.add("light");
+            document.body.classList.remove("dark");
+          } else {
+            document.body.classList.add("dark");
+            document.body.classList.remove("light");
+          }
+        }}
         class="theme-toggle"
+        style="position: static;"
       >
         <span class="g-icon filled-heavy"></span>
       </button>

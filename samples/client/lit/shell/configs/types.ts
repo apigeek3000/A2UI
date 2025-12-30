@@ -38,4 +38,6 @@ export interface AppConfig {
   serverUrl?: string;
   /** Theme overrides (CSS Variables) */
   theme?: v0_8.Types.Theme;
+  /** Firebase Configuration for Authentication */
+  firebaseConfig?: Record<string, string>;
 }

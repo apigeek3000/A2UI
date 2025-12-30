@@ -29,7 +29,8 @@
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vite/client"]
   },
   "references": [{ "path": "../../../../renderers/lit" }]
 }

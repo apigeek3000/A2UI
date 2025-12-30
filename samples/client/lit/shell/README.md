@@ -29,6 +29,21 @@ This sample depends on the Lit renderer. Before running this sample, you need to
 
 After starting the dev server, you can open http://localhost:5173/ to view the sample.
 
+## Authentication Setup
+
+This sample supports Firebase Authentication. To enable it:
+
+1.  **Create a Firebase Project:** Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
+2.  **Enable Auth:** In the Firebase Console, go to **Authentication** > **Sign-in method** and enable **Google**.
+3.  **Get Client Config:** Go to **Project Settings** > **General** > **Your apps**. Add a Web App and copy the `firebaseConfig` object.
+4.  **Configure Client:**
+    -   Copy `.env.example` to `.env`:
+        ```bash
+        cp .env.example .env
+        ```
+    -   Edit `.env` and fill in your Firebase configuration values.
+    -   The `configs/restaurant.ts` file is already configured to read these values.
+
 Important: The sample code provided is for demonstration purposes and illustrates the mechanics of A2UI and the Agent-to-Agent (A2A) protocol. When building production applications, it is critical to treat any agent operating outside of your direct control as a potentially untrusted entity.
 
 All operational data received from an external agent—including its AgentCard, messages, artifacts, and task statuses—should be handled as untrusted input. For example, a malicious agent could provide crafted data in its fields (e.g., name, skills.description) that, if used without sanitization to construct prompts for a Large Language Model (LLM), could expose your application to prompt injection attacks.

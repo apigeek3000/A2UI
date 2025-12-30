@@ -16,6 +16,8 @@ import logging
 import os
 
 import click
+import firebase_admin
+from firebase_admin import auth, credentials
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
@@ -24,13 +26,65 @@ from a2ui.a2ui_extension import get_a2ui_agent_extension
 from agent import RestaurantAgent
 from agent_executor import RestaurantAgentExecutor
 from dotenv import load_dotenv
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize Firebase Admin SDK
+try:
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app()
+except Exception as e:
+    logger.warning(
+        f"Failed to initialize Firebase Admin SDK: {e}. Auth checks may fail if not configured properly with GOOGLE_APPLICATION_CREDENTIALS."
+    )
+
+
+class FirebaseAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        # Public paths
+        if request.url.path.endswith(
+            "/.well-known/agent-card.json"
+        ) or request.url.path.startswith("/static"):
+            return await call_next(request)
+
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return JSONResponse(
+                {"error": "Unauthorized: Missing or invalid Authorization header"},
+                status_code=401,
+            )
+
+        token = auth_header.split(" ")[1]
+        try:
+            # Verify the token
+            decoded_token = auth.verify_id_token(token)
+            request.state.user = decoded_token
+
+            # Log the user email
+            email = decoded_token.get("email")
+            if email:
+                logger.info(f"Request authenticated for user: {email}")
+            else:
+                logger.info("Request authenticated (no email found in token)")
+
+        except Exception as e:
+            logger.error(f"Auth error: {e}")
+            return JSONResponse(
+                {"error": "Unauthorized: Invalid token"}, status_code=401
+            )
+
+        return await call_next(request)
 
 
 class MissingAPIKeyError(Exception):
@@ -86,6 +140,8 @@ def main(host, port):
         import uvicorn
 
         app = server.build()
+
+        app.add_middleware(FirebaseAuthMiddleware)
 
         app.add_middleware(
             CORSMiddleware,

@@ -23,9 +23,14 @@ const A2AUI_MIME_TYPE = "application/json+a2aui";
 export class A2UIClient {
   #serverUrl: string;
   #client: A2AClient | null = null;
+  #tokenProvider: (() => Promise<string | null>) | undefined;
 
-  constructor(serverUrl: string = "") {
+  constructor(
+    serverUrl: string = "",
+    tokenProvider?: () => Promise<string | null>
+  ) {
     this.#serverUrl = serverUrl;
+    this.#tokenProvider = tokenProvider;
   }
 
   #ready: Promise<void> = Promise.resolve();
@@ -43,9 +48,18 @@ export class A2UIClient {
         {
           fetchImpl: async (url, init) => {
             const headers = new Headers(init?.headers);
-            headers.set("X-A2A-Extensions", "https://a2ui.org/a2a-extension/a2ui/v0.8");
+            headers.set(
+              "X-A2A-Extensions",
+              "https://a2ui.org/a2a-extension/a2ui/v0.8"
+            );
+            if (this.#tokenProvider) {
+              const token = await this.#tokenProvider();
+              if (token) {
+                headers.set("Authorization", `Bearer ${token}`);
+              }
+            }
             return fetch(url, { ...init, headers });
-          }
+          },
         }
       );
     }
