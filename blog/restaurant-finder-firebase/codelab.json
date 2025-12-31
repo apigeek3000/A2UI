@@ -1,0 +1,27 @@
+{
+  "environment": "web",
+  "format": "markdown",
+  "prefix": "",
+  "mainga": "",
+  "updated": "2025-01-01T00:00:00Z",
+  "id": "restaurant-finder-firebase",
+  "duration": 60,
+  "title": "Building a Secure A2UI Restaurant Finder with Firebase",
+  "authors": "A2UI Team",
+  "summary": "Learn how to secure an A2UI Restaurant Finder agent using Firebase Authentication.",
+  "source": "restaurant-finder-firebase/index.md",
+  "theme": "a2ui",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "a2ui",
+    "firebase",
+    "security"
+  ],
+  "tags": [
+    "a2ui",
+    "firebase"
+  ],
+  "url": "restaurant-finder-firebase"
+}
